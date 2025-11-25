@@ -40,7 +40,7 @@
   </style>
   </head>
 <body class="font-display">
-<div class="relative flex h-screen w-full flex-col bg-background-light dark:bg-background-dark group/design-root overflow-hidden">
+<div class="relative flex h-screen w-full flex-col bg-background-light dark:bg-background-dark group/design-root overflow-hidden mx-auto max-w-lg">
 <!-- Top App Bar -->
 <div class="flex shrink-0 items-center bg-white dark:bg-neutral-900 p-4 justify-between sticky top-0 z-10 border-b border-gray-200 dark:border-neutral-800">
   <button id="go-back" class="text-neutral-gray-dark dark:text-gray-200 flex size-12 shrink-0 items-center justify-start -ml-2">
@@ -53,7 +53,7 @@
 <div class="flex-1 overflow-y-auto pb-4">
 <!-- Welcome Message -->
 <div class="flex items-end gap-3 p-4">
-<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full w-10 h-10 shrink-0" data-alt="AI assistant avatar with abstract geometric shapes" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAuULaQwPjv0aynGEP_fyqLcnLwhhO7i4Ocs6GhE-ihDD0S12Vj3RSV0cq2nYpKjSINRk3tWfa2iReGRFr_IZk8-5nkUXuNq96XUK1PxEK8tO9ysvgoETFQkj1mbgoX6Q6cGu2oImVZnQjIHZtU_CYx_ihqep51zX8yQR5Pzzo-peZu0Q9YeGSI546q-voBDhDFw6gMLxH3ufVzwQlV9R7MzE_7Vsluy_Jq2rISAfsDPiXRdtZFQUFESHm1RLIhMIWVHc6qy7Rj4VQ');"></div>
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full w-10 h-10 shrink-0" data-alt="AI assistant avatar with abstract geometric shapes" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAytDtpPotWtCIza6sE43ag6YNJ8r4mDhSJTgG393zLL6NYQg4M8D_r9l12Pkv9FKOKB6qrVYG3hG0RSx8eWJ7KdhtSn_6ccMF5uf5Nr1igNjWoxIZXI_EiyBwqtnG9uto-ag6gyoVtN2Mhv2UjOab7zslcVZ0VgEWE_YeYXmj-Rdhu7j1pxLleYdl6QB0GtoKGRIZZZmTiQpuvRWOVhwZLnQf7tVWUK3yd69uUyaTN_qnKDW2BuhUT-REnluv0duYpJD3iOfJ9Kys');"></div>
 <div class="flex flex-1 flex-col gap-2 items-start">
 <p class="text-neutral-gray-light dark:text-gray-400 text-[13px] font-normal leading-normal max-w-[360px]">AI 챗봇</p>
 <p class="text-base font-normal leading-normal flex max-w-[360px] rounded-lg rounded-bl-none px-4 py-3 bg-white dark:bg-neutral-800 text-neutral-gray-dark dark:text-white shadow-sm">
@@ -78,7 +78,7 @@
 </div>
 <!-- AI Response with Loading Indicator -->
 <div class="flex items-end gap-3 p-4">
-<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full w-10 h-10 shrink-0" data-alt="AI assistant avatar with abstract geometric shapes" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDO-lRx8Be4wBdy3biN67a_PSuKDIUyiUsCHcSuyNJHGZuhEX61IewzjE5wgoJzmj8UqyzCfWWj67t2M7HgQkebz3ZQTBj-k1wue5reEIUju7dPv9LU3NxyXOc9UtCsT8wp-ArwWjS6faoMSfcvhrOwepn-_HKnt0Z4mqh-i81FI_daZo_ptGcqfyCGrXEydD5gsPuPOkihZuvNwbaA3L2NmuJI0aQanhtL6H81VqbUBoWku6qPnEQX9k636757Dlv0VtXB5Bupbgc');"></div>
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full w-10 h-10 shrink-0" data-alt="AI assistant avatar with abstract geometric shapes" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAytDtpPotWtCIza6sE43ag6YNJ8r4mDhSJTgG393zLL6NYQg4M8D_r9l12Pkv9FKOKB6qrVYG3hG0RSx8eWJ7KdhtSn_6ccMF5uf5Nr1igNjWoxIZXI_EiyBwqtnG9uto-ag6gyoVtN2Mhv2UjOab7zslcVZ0VgEWE_YeYXmj-Rdhu7j1pxLleYdl6QB0GtoKGRIZZZmTiQpuvRWOVhwZLnQf7tVWUK3yd69uUyaTN_qnKDW2BuhUT-REnluv0duYpJD3iOfJ9Kys');"></div>
 <div class="flex flex-1 flex-col gap-2 items-start">
 <p class="text-neutral-gray-light dark:text-gray-400 text-[13px] font-normal leading-normal max-w-[360px]">AI 챗봇</p>
 <div class="flex max-w-[360px] items-center gap-2 rounded-lg rounded-bl-none px-4 py-3 bg-white dark:bg-neutral-800 text-neutral-gray-dark dark:text-white shadow-sm">
@@ -93,7 +93,7 @@
 </div>
 <!-- AI Response with Source -->
 <div class="flex items-end gap-3 p-4">
-<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full w-10 h-10 shrink-0 self-start" data-alt="AI assistant avatar with abstract geometric shapes" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBT6CuPrCVLeMbM5AyaQQFeX5bCvsKocjj653Y21uZdMqjZElHW2ZXCYoRA1C7ewfUDa46P3k1J8uH3cpfAeryv-_zBHs0Zc0jHaSIWQZPC2MDk-jdiV1uXPDwRxZNK8KYjjgWq-62kiGPxvBx5LPoUj_ArGtnL0VjTif_63RL0ebQ8l0oXDDq0HI8U_pjsOAdPi1UIMaWBKd7CQr1qK9cVRmcRAlYLLOuybT2Lx6peDgiLgh-qW8Svr53S6et2ULSXrw45W1vpNWw');"></div>
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full w-10 h-10 shrink-0 self-start" data-alt="AI assistant avatar with abstract geometric shapes" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAytDtpPotWtCIza6sE43ag6YNJ8r4mDhSJTgG393zLL6NYQg4M8D_r9l12Pkv9FKOKB6qrVYG3hG0RSx8eWJ7KdhtSn_6ccMF5uf5Nr1igNjWoxIZXI_EiyBwqtnG9uto-ag6gyoVtN2Mhv2UjOab7zslcVZ0VgEWE_YeYXmj-Rdhu7j1pxLleYdl6QB0GtoKGRIZZZmTiQpuvRWOVhwZLnQf7tVWUK3yd69uUyaTN_qnKDW2BuhUT-REnluv0duYpJD3iOfJ9Kys');"></div>
 <div class="flex flex-1 flex-col gap-2 items-start">
 <p class="text-neutral-gray-light dark:text-gray-400 text-[13px] font-normal leading-normal max-w-[360px]">AI 챗봇</p>
 <div class="flex flex-col gap-3 max-w-[360px] rounded-lg rounded-bl-none p-4 bg-white dark:bg-neutral-800 text-neutral-gray-dark dark:text-white shadow-sm">
@@ -153,7 +153,7 @@
             const formattedMessage = message.replace(/\n/g, '<br>');
             return `
                 <div class="flex items-end gap-3 p-4">
-                    <div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full w-10 h-10 shrink-0 self-start" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBT6CuPrCVLeMbM5AyaQQFeX5bCvsKocjj653Y21uZdMqjZElHW2ZXCYoRA1C7ewfUDa46P3k1J8uH3cpfAeryv-_zBHs0Zc0jHaSIWQZPC2MDk-jdiV1uXPDwRxZNK8KYjjgWq-62kiGPxvBx5LPoUj_ArGtnL0VjTif_63RL0ebQ8l0oXDDq0HI8U_pjsOAdPi1UIMaWBKd7CQr1qK9cVRmcRAlYLLOuybT2Lx6peDgiLgh-qW8Svr53S6et2ULSXrw45W1vpNWw');"></div>
+                    <div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full w-10 h-10 shrink-0 self-start" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAytDtpPotWtCIza6sE43ag6YNJ8r4mDhSJTgG393zLL6NYQg4M8D_r9l12Pkv9FKOKB6qrVYG3hG0RSx8eWJ7KdhtSn_6ccMF5uf5Nr1igNjWoxIZXI_EiyBwqtnG9uto-ag6gyoVtN2Mhv2UjOab7zslcVZ0VgEWE_YeYXmj-Rdhu7j1pxLleYdl6QB0GtoKGRIZZZmTiQpuvRWOVhwZLnQf7tVWUK3yd69uUyaTN_qnKDW2BuhUT-REnluv0duYpJD3iOfJ9Kys');"></div>
                     <div class="flex flex-1 flex-col gap-2 items-start">
                         <p class="text-neutral-gray-light dark:text-gray-400 text-[13px] font-normal leading-normal max-w-[360px]">AI 챗봇</p>
                         <div class="flex flex-col gap-3 max-w-[360px] rounded-lg rounded-bl-none p-4 bg-white dark:bg-neutral-800 text-neutral-gray-dark dark:text-white shadow-sm">
@@ -166,7 +166,7 @@
 
     const loadingIndicatorHTML = `
         <div id="loading-indicator" class="flex items-end gap-3 p-4">
-            <div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full w-10 h-10 shrink-0" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDO-lRx8Be4wBdy3biN67a_PSuKDIUyiUsCHcSuyNJHGZuhEX61IewzjE5wgoJzmj8UqyzCfWWj67t2M7HgQkebz3ZQTBj-k1wue5reEIUju7dPv9LU3NxyXOc9UtCsT8wp-ArwWjS6faoMSfcvhrOwepn-_HKnt0Z4mqh-i81FI_daZo_ptGcqfyCGrXEydD5gsPuPOkihZuvNwbaA3L2NmuJI0aQanhtL6H81VqbUBoWku6qPnEQX9k636757Dlv0VtXB5Bupbgc');"></div>
+            <div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full w-10 h-10 shrink-0" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAytDtpPotWtCIza6sE43ag6YNJ8r4mDhSJTgG393zLL6NYQg4M8D_r9l12Pkv9FKOKB6qrVYG3hG0RSx8eWJ7KdhtSn_6ccMF5uf5Nr1igNjWoxIZXI_EiyBwqtnG9uto-ag6gyoVtN2Mhv2UjOab7zslcVZ0VgEWE_YeYXmj-Rdhu7j1pxLleYdl6QB0GtoKGRIZZZmTiQpuvRWOVhwZLnQf7tVWUK3yd69uUyaTN_qnKDW2BuhUT-REnluv0duYpJD3iOfJ9Kys');"></div>
             <div class="flex flex-1 flex-col gap-2 items-start">
                 <p class="text-neutral-gray-light dark:text-gray-400 text-[13px] font-normal leading-normal max-w-[360px]">AI 챗봇</p>
                 <div class="flex max-w-[360px] items-center gap-2 rounded-lg rounded-bl-none px-4 py-3 bg-white dark:bg-neutral-800 text-neutral-gray-dark dark:text-white shadow-sm">

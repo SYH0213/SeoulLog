@@ -1,0 +1,16 @@
+fastapi
+uvicorn[standard]
+chromadb
+pydantic
+python-dotenv
+openai
+langchain
+langchain-openai
+pandas
+numpy
+requests
+SQLAlchemy
+tiktoken
+anthropic
+google-genai
+Pillow

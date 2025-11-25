@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html class="h-full" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Chatbot Interface</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+<script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            primary: "#007AFF", // A standard iOS blue
+            "background-light": "#F9F9F9",
+            "background-dark": "#1C1C1E",
+            "text-light": "#000000",
+            "text-dark": "#FFFFFF",
+            "bubble-light": "#FFFFFF",
+            "bubble-dark": "#2C2C2E",
+            "button-light": "#F2F2F7",
+            "button-dark": "#3A3A3C",
+            "input-light": "#FFFFFF",
+            "input-dark": "#2C2C2E",
+            "placeholder-light": "#8E8E93",
+            "placeholder-dark": "#8D8D93",
+            "border-light": "#E5E5EA",
+            "border-dark": "#38383A",
+          },
+          fontFamily: {
+            display: ["Noto Sans KR", "sans-serif"],
+          },
+          borderRadius: {
+            DEFAULT: "0.5rem", // 8px
+            lg: "1.25rem", // 20px
+          },
+        },
+      },
+    };
+  </script>
+<style>
+    body {
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display flex h-full flex-col">
+<div class="flex-shrink-0 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-md border-b border-border-light dark:border-border-dark">
+<div class="mx-auto max-w-md">
+<header class="flex h-14 items-center justify-between px-4">
+<button class="text-text-light dark:text-text-dark">
+<span class="material-icons">arrow_back_ios_new</span>
+</button>
+<h1 class="text-lg font-bold text-text-light dark:text-text-dark">회의록 AI 챗봇</h1>
+<div class="w-8"></div> 
+</header>
+</div>
+</div>
+<main class="flex-1 overflow-y-auto p-4">
+<div class="mx-auto max-w-md space-y-6">
+<div class="flex items-start gap-3">
+<img alt="A magpie flying with a scroll in its beak, serving as the AI chatbot avatar" class="h-10 w-10 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAytDtpPotWtCIza6sE43ag6YNJ8r4mDhSJTgG393zLL6NYQg4M8D_r9l12Pkv9FKOKB6qrVYG3hG0RSx8eWJ7KdhtSn_6ccMF5uf5Nr1igNjWoxIZXI_EiyBwqtnG9uto-ag6gyoVtN2Mhv2UjOab7zslcVZ0VgEWE_YeYXmj-Rdhu7j1pxLleYdl6QB0GtoKGRIZZZmTiQpuvRWOVhwZLnQf7tVWUK3yd69uUyaTN_qnKDW2BuhUT-REnluv0duYpJD3iOfJ9Kys"/>
+<div class="flex flex-col items-start gap-2">
+<span class="text-sm font-medium text-text-light dark:text-text-dark">AI 챗봇</span>
+<div class="rounded-lg rounded-tl-none bg-bubble-light dark:bg-bubble-dark p-3 text-text-light dark:text-text-dark shadow-sm" style="max-width: 250px;">
+<p>안녕하세요! 서울시의회 회의록 AI 챗봇입니다. 궁금한 점을 질문해주세요.</p>
+</div>
+</div>
+</div>
+<div class="flex items-start gap-3 pl-12">
+<div class="flex flex-wrap gap-2">
+<button class="rounded-full bg-button-light dark:bg-button-dark px-4 py-2 text-sm font-medium text-text-light dark:text-text-dark">
+                최근 논의된 청년 정책은?
+            </button>
+<button class="rounded-full bg-button-light dark:bg-button-dark px-4 py-2 text-sm font-medium text-text-light dark:text-text-dark">
+                지난 회의 주요 안건 요약해줘
+            </button>
+</div>
+</div>
+</div>
+</main>
+<footer class="flex-shrink-0 bg-background-light dark:bg-background-dark border-t border-border-light dark:border-border-dark">
+<div class="mx-auto max-w-md p-3">
+<div class="relative flex items-center">
+<input class="w-full rounded-full border-none bg-input-light dark:bg-input-dark py-3 pl-4 pr-12 text-text-light dark:text-text-dark placeholder:text-placeholder-light dark:placeholder:text-placeholder-dark focus:ring-2 focus:ring-primary" placeholder="궁금한 내용을 입력하세요..." type="text"/>
+<button class="absolute right-2 flex h-8 w-8 items-center justify-center rounded-full bg-primary text-white">
+<span class="material-icons text-xl">arrow_upward</span>
+</button>
+</div>
+</div>
+</footer>
+
+</body></html>

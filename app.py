@@ -43,6 +43,9 @@ from search.metadata_validator import MetadataValidator
 # Utils
 from utils.cost_tracker import CostTracker
 
+# Chatbot
+from chatbot.router import router as chatbot_router
+
 # ============================================================
 # Pydantic Models
 # ============================================================
@@ -102,6 +105,9 @@ class TopAgenda(BaseModel):
 # ============================================================
 
 app = FastAPI(title="SeoulLog API")
+
+# Chatbot 라우터 추가
+app.include_router(chatbot_router, prefix="/api", tags=["Chatbot"])
 
 # HTML 파일 경로
 HTML_DIR = Path("frontend")
@@ -191,6 +197,20 @@ async def get_search_page():
         raise HTTPException(status_code=404, detail="search.html not found")
 
     with open(search_html_path, 'r', encoding='utf-8') as f:
+        return f.read()
+
+
+@app.get("/chat", response_class=HTMLResponse)
+async def get_chat_page():
+    """
+    챗봇 페이지 (chatbot.html) 반환
+    """
+    chat_html_path = HTML_DIR / "chatbot.html"
+
+    if not chat_html_path.exists():
+        raise HTTPException(status_code=404, detail="chatbot.html not found")
+
+    with open(chat_html_path, 'r', encoding='utf-8') as f:
         return f.read()
 
 
