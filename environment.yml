@@ -1,4 +1,4 @@
-name: seoul_test
+name: seoul
 channels:
   - conda-forge
   - defaults
