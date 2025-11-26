@@ -369,6 +369,11 @@ def main():
     Returns:
         CostTracker: 비용 추적 객체
     """
+    # Windows에서 nested asyncio.run() 지원
+    import sys
+    if sys.platform == 'win32':
+        asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+
     return asyncio.run(main_async())
 
 

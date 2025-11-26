@@ -38,7 +38,8 @@ import time
 import copy
 
 # 프로젝트 루트를 Python path에 추가
-sys.path.append(str(Path(__file__).parent))
+project_root = Path(__file__).parent.parent  # scripts의 부모 = 프로젝트 루트
+sys.path.insert(0, str(project_root))
 
 from dotenv import load_dotenv
 from utils.cost_tracker import CostTracker
@@ -304,6 +305,8 @@ def main():
     parser = argparse.ArgumentParser(description="전체 DB 재구축 파이프라인")
     parser.add_argument("--skip-json", action="store_true", help="JSON 생성 건너뛰기")
     parser.add_argument("--only-new", type=int, metavar="N", help="랜덤 N개만 처리 (테스트용)")
+    parser.add_argument("--start-from", type=int, metavar="STEP", choices=[2, 3, 4, 5],
+                        help="특정 Step부터 시작 (2: ChromaDB, 3: SQLite, 4: AI요약, 5: 첨부문서)")
     args = parser.parse_args()
 
     start_time = time.time()
@@ -326,22 +329,28 @@ def main():
         logger.info("옵션: --skip-json (JSON 생성 건너뛰기)")
     if args.only_new:
         logger.info(f"옵션: --only-new {args.only_new} (테스트 모드)")
+    if args.start_from:
+        logger.info(f"옵션: --start-from {args.start_from} (Step {args.start_from}부터 시작)")
 
     # 환경 변수 확인
     check_env_vars()
     logger.info("환경 변수 확인 완료")
 
-    # 초기화
-    print_step(0, 5, "데이터 초기화")
-    logger.info("Step 0: 데이터 초기화 시작")
-    cleanup_old_data(skip_json=args.skip_json)
-    logger.info("Step 0: 데이터 초기화 완료")
+    # 초기화 (start_from이 지정되면 DB 초기화 건너뛰기)
+    if not args.start_from:
+        print_step(0, 5, "데이터 초기화")
+        logger.info("Step 0: 데이터 초기화 시작")
+        cleanup_old_data(skip_json=args.skip_json)
+        logger.info("Step 0: 데이터 초기화 완료")
+    else:
+        print(f"\n⏭️  Step 0-{args.start_from - 1} 건너뛰기 (기존 데이터 유지)")
+        logger.info(f"Step 0-{args.start_from - 1} 건너뛰기 (기존 데이터 유지)")
 
     # 전체 비용 추적기 초기화
     total_cost_tracker = CostTracker()
 
     # Step 1: JSON 생성 (선택적)
-    if not args.skip_json:
+    if not args.skip_json and (not args.start_from or args.start_from <= 1):
         print_step(1, 5, "JSON 생성 (md → JSON)")
         logger.info("Step 1: JSON 생성 시작")
         success, step1_cost_tracker = step1_generate_json(n_files=args.only_new)
@@ -360,141 +369,168 @@ def main():
             total_cost_tracker.total_cost = step1_cost_tracker.total_cost
 
         logger.info("Step 1: JSON 생성 완료")
+    elif args.start_from and args.start_from > 1:
+        print_step(1, 5, "JSON 생성 (건너뛰기)")
+        logger.info("Step 1: JSON 생성 건너뛰기 (--start-from)")
+        print("⏭️  Step 1 건너뛰기")
     else:
         print_step(1, 5, "JSON 생성 (건너뛰기)")
         logger.info("Step 1: JSON 생성 건너뛰기 (기존 파일 사용)")
         print("⏭️  기존 JSON 파일 사용")
 
     # Step 2: ChromaDB 삽입
-    print_step(2, 5, "ChromaDB 삽입 (JSON → ChromaDB)")
-    logger.info("Step 2: ChromaDB 삽입 시작")
-    success, step2_cost_tracker = step2_insert_chromadb()
-    if not success:
-        logger.error("Step 2: ChromaDB 삽입 실패")
-        print("\n❌ 파이프라인 중단: ChromaDB 삽입 실패")
-        sys.exit(1)
+    if not args.start_from or args.start_from <= 2:
+        print_step(2, 5, "ChromaDB 삽입 (JSON → ChromaDB)")
+        logger.info("Step 2: ChromaDB 삽입 시작")
+        success, step2_cost_tracker = step2_insert_chromadb()
+        if not success:
+            logger.error("Step 2: ChromaDB 삽입 실패")
+            print("\n❌ 파이프라인 중단: ChromaDB 삽입 실패")
+            sys.exit(1)
 
-    # Step 2 비용 로그 기록
-    if step2_cost_tracker:
-        step2_cost = step2_cost_tracker.total_cost
-        logger.info(f"Step 2 비용: ${step2_cost:.6f} (₩{step2_cost * 1300:.2f})")
+        # Step 2 비용 로그 기록
+        if step2_cost_tracker:
+            step2_cost = step2_cost_tracker.total_cost
+            logger.info(f"Step 2 비용: ${step2_cost:.6f} (₩{step2_cost * 1300:.2f})")
 
-        # 전체 비용에 통합 (OpenAI 부분만 추가)
-        if 'openai' in step2_cost_tracker.costs_breakdown:
-            if 'openai' not in total_cost_tracker.costs_breakdown:
-                total_cost_tracker.costs_breakdown['openai'] = {'models': {}}
-            if 'models' not in total_cost_tracker.costs_breakdown['openai']:
-                total_cost_tracker.costs_breakdown['openai']['models'] = {}
+            # 전체 비용에 통합 (OpenAI Embedding 부분만 추가)
+            if 'embedding' in step2_cost_tracker.costs_breakdown:
+                # embedding 키를 openai/models로 변환하여 저장
+                if 'openai' not in total_cost_tracker.costs_breakdown:
+                    total_cost_tracker.costs_breakdown['openai'] = {'models': {}}
+                if 'models' not in total_cost_tracker.costs_breakdown['openai']:
+                    total_cost_tracker.costs_breakdown['openai']['models'] = {}
 
-            # OpenAI 모델별로 통합
-            for model, model_costs in step2_cost_tracker.costs_breakdown['openai'].get('models', {}).items():
+                emb = step2_cost_tracker.costs_breakdown['embedding']
+                model = 'text-embedding-3-small'  # Step 2에서 사용하는 모델
+
+                # OpenAI Embedding 비용 추가
                 if model not in total_cost_tracker.costs_breakdown['openai']['models']:
-                    # 딕셔너리 전체 복사하여 추가
                     total_cost_tracker.costs_breakdown['openai']['models'][model] = {
-                        'tokens': model_costs.get('tokens', 0),
-                        'cost': model_costs.get('cost', 0.0),
-                        'calls': model_costs.get('calls', 0)
+                        'tokens': emb.get('tokens', 0),
+                        'cost': emb.get('cost', 0.0),
+                        'calls': emb.get('calls', 0)
                     }
                 else:
                     # 기존 모델 비용에 더하기
                     existing = total_cost_tracker.costs_breakdown['openai']['models'][model]
-                    existing['tokens'] = existing.get('tokens', 0) + model_costs.get('tokens', 0)
-                    existing['cost'] = existing.get('cost', 0.0) + model_costs.get('cost', 0.0)
-                    existing['calls'] = existing.get('calls', 0) + model_costs.get('calls', 0)
-            total_cost_tracker.total_cost += step2_cost
+                    existing['tokens'] = existing.get('tokens', 0) + emb.get('tokens', 0)
+                    existing['cost'] = existing.get('cost', 0.0) + emb.get('cost', 0.0)
+                    existing['calls'] = existing.get('calls', 0) + emb.get('calls', 0)
 
-    logger.info("Step 2: ChromaDB 삽입 완료")
+                total_cost_tracker.total_cost += step2_cost
+
+        logger.info("Step 2: ChromaDB 삽입 완료")
+    else:
+        print_step(2, 5, "ChromaDB 삽입 (건너뛰기)")
+        logger.info("Step 2: ChromaDB 삽입 건너뛰기 (--start-from)")
+        print("⏭️  Step 2 건너뛰기")
 
     # Step 3: SQLite DB 생성
-    print_step(3, 5, "SQLite DB 생성 (JSON → SQLite)")
-    logger.info("Step 3: SQLite DB 생성 시작")
-    if not step3_create_sqlite():
-        logger.error("Step 3: SQLite DB 생성 실패")
-        print("\n❌ 파이프라인 중단: SQLite 생성 실패")
-        sys.exit(1)
-    logger.info("Step 3: SQLite DB 생성 완료")
+    if not args.start_from or args.start_from <= 3:
+        print_step(3, 5, "SQLite DB 생성 (JSON → SQLite)")
+        logger.info("Step 3: SQLite DB 생성 시작")
+        if not step3_create_sqlite():
+            logger.error("Step 3: SQLite DB 생성 실패")
+            print("\n❌ 파이프라인 중단: SQLite 생성 실패")
+            sys.exit(1)
+        logger.info("Step 3: SQLite DB 생성 완료")
+    else:
+        print_step(3, 5, "SQLite DB 생성 (건너뛰기)")
+        logger.info("Step 3: SQLite DB 생성 건너뛰기 (--start-from)")
+        print("⏭️  Step 3 건너뛰기")
 
     # Step 4: AI 요약 생성
-    print_step(4, 5, "AI 요약 생성 (Gemini API)")
-    logger.info("Step 4: AI 요약 생성 시작")
-    success, step4_cost_tracker = step4_generate_summaries()
-    if not success:
-        logger.warning("Step 4: AI 요약 생성 실패 (DB는 사용 가능)")
-        print("\n⚠️  AI 요약 생성 실패 (하지만 DB는 사용 가능)")
+    if not args.start_from or args.start_from <= 4:
+        print_step(4, 5, "AI 요약 생성 (Gemini API)")
+        logger.info("Step 4: AI 요약 생성 시작")
+        success, step4_cost_tracker = step4_generate_summaries()
+        if not success:
+            logger.warning("Step 4: AI 요약 생성 실패 (DB는 사용 가능)")
+            print("\n⚠️  AI 요약 생성 실패 (하지만 DB는 사용 가능)")
+        else:
+            # Step 4 비용 로그 기록
+            if step4_cost_tracker:
+                step4_cost = step4_cost_tracker.total_cost
+                logger.info(f"Step 4 비용: ${step4_cost:.6f} (₩{step4_cost * 1300:.2f})")
+
+                # 전체 비용에 통합
+                if 'gemini' in step4_cost_tracker.costs_breakdown:
+                    if 'gemini' not in total_cost_tracker.costs_breakdown:
+                        total_cost_tracker.costs_breakdown['gemini'] = {'models': {}}
+                    if 'models' not in total_cost_tracker.costs_breakdown['gemini']:
+                        total_cost_tracker.costs_breakdown['gemini']['models'] = {}
+
+                    # Gemini 모델별로 통합 (gemini-2.5-flash)
+                    for model, model_costs in step4_cost_tracker.costs_breakdown['gemini'].get('models', {}).items():
+                        if model not in total_cost_tracker.costs_breakdown['gemini']['models']:
+                            # 딕셔너리 전체 복사하여 추가
+                            total_cost_tracker.costs_breakdown['gemini']['models'][model] = {
+                                'input_tokens': model_costs.get('input_tokens', 0),
+                                'output_tokens': model_costs.get('output_tokens', 0),
+                                'cost': model_costs.get('cost', 0.0),
+                                'calls': model_costs.get('calls', 0)
+                            }
+                        else:
+                            # 기존 모델 비용에 더하기
+                            existing = total_cost_tracker.costs_breakdown['gemini']['models'][model]
+                            existing['input_tokens'] = existing.get('input_tokens', 0) + model_costs.get('input_tokens', 0)
+                            existing['output_tokens'] = existing.get('output_tokens', 0) + model_costs.get('output_tokens', 0)
+                            existing['cost'] = existing.get('cost', 0.0) + model_costs.get('cost', 0.0)
+                            existing['calls'] = existing.get('calls', 0) + model_costs.get('calls', 0)
+                    total_cost_tracker.total_cost += step4_cost
+
+            logger.info("Step 4: AI 요약 생성 완료")
     else:
-        # Step 4 비용 로그 기록
-        if step4_cost_tracker:
-            step4_cost = step4_cost_tracker.total_cost
-            logger.info(f"Step 4 비용: ${step4_cost:.6f} (₩{step4_cost * 1300:.2f})")
-
-            # 전체 비용에 통합
-            if 'gemini' in step4_cost_tracker.costs_breakdown:
-                if 'gemini' not in total_cost_tracker.costs_breakdown:
-                    total_cost_tracker.costs_breakdown['gemini'] = {'models': {}}
-                if 'models' not in total_cost_tracker.costs_breakdown['gemini']:
-                    total_cost_tracker.costs_breakdown['gemini']['models'] = {}
-
-                # Gemini 모델별로 통합 (gemini-2.5-flash)
-                for model, model_costs in step4_cost_tracker.costs_breakdown['gemini'].get('models', {}).items():
-                    if model not in total_cost_tracker.costs_breakdown['gemini']['models']:
-                        # 딕셔너리 전체 복사하여 추가
-                        total_cost_tracker.costs_breakdown['gemini']['models'][model] = {
-                            'input_tokens': model_costs.get('input_tokens', 0),
-                            'output_tokens': model_costs.get('output_tokens', 0),
-                            'cost': model_costs.get('cost', 0.0),
-                            'calls': model_costs.get('calls', 0)
-                        }
-                    else:
-                        # 기존 모델 비용에 더하기
-                        existing = total_cost_tracker.costs_breakdown['gemini']['models'][model]
-                        existing['input_tokens'] = existing.get('input_tokens', 0) + model_costs.get('input_tokens', 0)
-                        existing['output_tokens'] = existing.get('output_tokens', 0) + model_costs.get('output_tokens', 0)
-                        existing['cost'] = existing.get('cost', 0.0) + model_costs.get('cost', 0.0)
-                        existing['calls'] = existing.get('calls', 0) + model_costs.get('calls', 0)
-                total_cost_tracker.total_cost += step4_cost
-
-        logger.info("Step 4: AI 요약 생성 완료")
+        print_step(4, 5, "AI 요약 생성 (건너뛰기)")
+        logger.info("Step 4: AI 요약 생성 건너뛰기 (--start-from)")
+        print("⏭️  Step 4 건너뛰기")
 
     # Step 5: 첨부 문서 요약 생성
-    print_step(5, 5, "첨부 문서 요약 생성 (Gemini File API)")
-    logger.info("Step 5: 첨부 문서 요약 생성 시작")
-    success, step5_cost_tracker = step5_generate_attachment_summaries()
-    if not success:
-        logger.warning("Step 5: 첨부 문서 요약 생성 실패 (DB는 사용 가능)")
-        print("\n⚠️  첨부 문서 요약 생성 실패 (하지만 DB는 사용 가능)")
+    if not args.start_from or args.start_from <= 5:
+        print_step(5, 5, "첨부 문서 요약 생성 (Gemini File API)")
+        logger.info("Step 5: 첨부 문서 요약 생성 시작")
+        success, step5_cost_tracker = step5_generate_attachment_summaries()
+        if not success:
+            logger.warning("Step 5: 첨부 문서 요약 생성 실패 (DB는 사용 가능)")
+            print("\n⚠️  첨부 문서 요약 생성 실패 (하지만 DB는 사용 가능)")
+        else:
+            # Step 5 비용 로그 기록
+            if step5_cost_tracker:
+                step5_cost = step5_cost_tracker.total_cost
+                logger.info(f"Step 5 비용: ${step5_cost:.6f} (₩{step5_cost * 1300:.2f})")
+
+                # 전체 비용에 통합 (Gemini 2.5 Flash)
+                if 'gemini' in step5_cost_tracker.costs_breakdown:
+                    if 'gemini' not in total_cost_tracker.costs_breakdown:
+                        total_cost_tracker.costs_breakdown['gemini'] = {'models': {}}
+                    if 'models' not in total_cost_tracker.costs_breakdown['gemini']:
+                        total_cost_tracker.costs_breakdown['gemini']['models'] = {}
+
+                    # Gemini 모델별로 통합
+                    for model, model_costs in step5_cost_tracker.costs_breakdown['gemini'].get('models', {}).items():
+                        if model not in total_cost_tracker.costs_breakdown['gemini']['models']:
+                            # 딕셔너리 전체 복사하여 추가
+                            total_cost_tracker.costs_breakdown['gemini']['models'][model] = {
+                                'input_tokens': model_costs.get('input_tokens', 0),
+                                'output_tokens': model_costs.get('output_tokens', 0),
+                                'cost': model_costs.get('cost', 0.0),
+                                'calls': model_costs.get('calls', 0)
+                            }
+                        else:
+                            # 기존 모델 비용에 더하기
+                            existing = total_cost_tracker.costs_breakdown['gemini']['models'][model]
+                            existing['input_tokens'] = existing.get('input_tokens', 0) + model_costs.get('input_tokens', 0)
+                            existing['output_tokens'] = existing.get('output_tokens', 0) + model_costs.get('output_tokens', 0)
+                            existing['cost'] = existing.get('cost', 0.0) + model_costs.get('cost', 0.0)
+                            existing['calls'] = existing.get('calls', 0) + model_costs.get('calls', 0)
+                    total_cost_tracker.total_cost += step5_cost
+
+            logger.info("Step 5: 첨부 문서 요약 생성 완료")
     else:
-        # Step 5 비용 로그 기록
-        if step5_cost_tracker:
-            step5_cost = step5_cost_tracker.total_cost
-            logger.info(f"Step 5 비용: ${step5_cost:.6f} (₩{step5_cost * 1300:.2f})")
-
-            # 전체 비용에 통합 (Gemini 2.5 Flash)
-            if 'gemini' in step5_cost_tracker.costs_breakdown:
-                if 'gemini' not in total_cost_tracker.costs_breakdown:
-                    total_cost_tracker.costs_breakdown['gemini'] = {'models': {}}
-                if 'models' not in total_cost_tracker.costs_breakdown['gemini']:
-                    total_cost_tracker.costs_breakdown['gemini']['models'] = {}
-
-                # Gemini 모델별로 통합
-                for model, model_costs in step5_cost_tracker.costs_breakdown['gemini'].get('models', {}).items():
-                    if model not in total_cost_tracker.costs_breakdown['gemini']['models']:
-                        # 딕셔너리 전체 복사하여 추가
-                        total_cost_tracker.costs_breakdown['gemini']['models'][model] = {
-                            'input_tokens': model_costs.get('input_tokens', 0),
-                            'output_tokens': model_costs.get('output_tokens', 0),
-                            'cost': model_costs.get('cost', 0.0),
-                            'calls': model_costs.get('calls', 0)
-                        }
-                    else:
-                        # 기존 모델 비용에 더하기
-                        existing = total_cost_tracker.costs_breakdown['gemini']['models'][model]
-                        existing['input_tokens'] = existing.get('input_tokens', 0) + model_costs.get('input_tokens', 0)
-                        existing['output_tokens'] = existing.get('output_tokens', 0) + model_costs.get('output_tokens', 0)
-                        existing['cost'] = existing.get('cost', 0.0) + model_costs.get('cost', 0.0)
-                        existing['calls'] = existing.get('calls', 0) + model_costs.get('calls', 0)
-                total_cost_tracker.total_cost += step5_cost
-
-        logger.info("Step 5: 첨부 문서 요약 생성 완료")
+        print_step(5, 5, "첨부 문서 요약 생성 (건너뛰기)")
+        logger.info("Step 5: 첨부 문서 요약 생성 건너뛰기 (--start-from)")
+        print("⏭️  Step 5 건너뛰기")
 
     # 최종 통계
     print_final_stats()

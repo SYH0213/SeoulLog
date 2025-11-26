@@ -117,6 +117,47 @@ class CostTracker:
             "cost_krw": f"₩{cost * 1300:.4f}"  # 환율 1300원 가정
         }
 
+    def add_embedding_cost_tokens(
+        self,
+        tokens: int,
+        model: str = "text-embedding-3-small"
+    ) -> Dict[str, float]:
+        """
+        Embedding API 비용 추가 (토큰 수로)
+
+        Args:
+            tokens: 토큰 수
+            model: Embedding 모델명
+
+        Returns:
+            비용 정보 딕셔너리
+        """
+        if model not in self.PRICING:
+            print(f"⚠️ 알 수 없는 모델: {model}")
+            return {"tokens": tokens, "cost": 0.0}
+
+        cost = tokens * self.PRICING[model]["input"]
+
+        self.total_cost += cost
+
+        if "embedding" not in self.costs_breakdown:
+            self.costs_breakdown["embedding"] = {
+                "tokens": 0,
+                "cost": 0.0,
+                "calls": 0
+            }
+
+        self.costs_breakdown["embedding"]["tokens"] += tokens
+        self.costs_breakdown["embedding"]["cost"] += cost
+        self.costs_breakdown["embedding"]["calls"] += 1
+
+        return {
+            "tokens": tokens,
+            "cost": cost,
+            "cost_usd": f"${cost:.6f}",
+            "cost_krw": f"₩{cost * 1300:.4f}"  # 환율 1300원 가정
+        }
+
     def add_chat_cost(
         self,
         input_tokens: int,
@@ -271,14 +312,21 @@ class CostTracker:
 
         if "gemini" in self.costs_breakdown:
             gemini = self.costs_breakdown["gemini"]
-            print(f"\n🤖 Gemini API:")
-            print(f"   호출 횟수: {gemini['calls']}회")
-            print(f"   입력 토큰: {gemini['input_tokens']:,}개")
-            print(f"   출력 토큰: {gemini['output_tokens']:,}개")
-            print(f"   비용: ${gemini['cost']:.6f} (₩{gemini['cost']*1300:.4f})")
 
-            # 모델별 세부 통계
+            # 모델별 통계를 집계
             if "models" in gemini and gemini["models"]:
+                total_calls = sum(m.get('calls', 0) for m in gemini["models"].values())
+                total_input = sum(m.get('input_tokens', 0) for m in gemini["models"].values())
+                total_output = sum(m.get('output_tokens', 0) for m in gemini["models"].values())
+                total_cost = sum(m.get('cost', 0.0) for m in gemini["models"].values())
+
+                print(f"\n🤖 Gemini API:")
+                print(f"   호출 횟수: {total_calls}회")
+                print(f"   입력 토큰: {total_input:,}개")
+                print(f"   출력 토큰: {total_output:,}개")
+                print(f"   비용: ${total_cost:.6f} (₩{total_cost*1300:.4f})")
+
+                # 모델별 세부 통계
                 print(f"\n   모델별 상세:")
                 for model_name, stats in gemini["models"].items():
                     print(f"   • {model_name}:")
