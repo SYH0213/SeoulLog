@@ -63,9 +63,9 @@ class AsyncOpenAIEmbeddingFunction:
         # 비용 추적
         if self.cost_tracker and hasattr(response, 'usage'):
             tokens = response.usage.total_tokens
-            self.cost_tracker.add_openai_cost(
-                input_tokens=tokens,
-                output_tokens=0,  # Embedding은 output이 없음
+            # Embedding 전용 메서드 사용
+            self.cost_tracker.add_embedding_cost_tokens(
+                tokens=tokens,
                 model=self.model_name
             )
 

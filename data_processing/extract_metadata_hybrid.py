@@ -305,9 +305,44 @@ def _extract_agenda_mapping_once(
    - agenda_title은 번호를 제외한 순수 안건명만 사용
    - 예: "1. 기획조정실 현안 업무보고" → "기획조정실 현안 업무보고"
 
-2단계: 각 안건의 논의 구간을 개별적으로 지정
-   - "---" 구분선, "○위원장" 발언, 안건명 언급을 참고하여 line_start, line_end 지정
-   - **일괄 상정된 안건도 본문 분석으로 각각 분리** (예: "제1항, 제2항 일괄 상정" → 개별 구간 찾기)
+2단계: 각 안건의 논의 구간 지정 (일괄상정 안건 처리 규칙)
+   - "---" 구분선, "○위원장" 또는 "○의장" 발언, 안건명 언급을 참고하여 line_start, line_end 지정
+
+   **본회의 일괄상정 안건 처리:**
+   - 회의 제목에 "본회의"가 포함되고 여러 안건이 일괄 상정된 경우
+   - 각 안건별로 "의사일정 제X항은 가결되었음" 또는 "의사일정 제X항을 표결하겠습니다" 형태의 개별 표결이 있는지 확인
+   - 개별 표결이 있으면 → **각 안건을 반드시 분리**
+     * 각 안건의 line_start: 해당 안건 표결 시작 라인 (예: "의사일정 제24항 ... 표결하겠습니다")
+     * 각 안건의 line_end: 해당 안건 표결 종료 라인 (예: "가결되었음을 선포합니다" 또는 다음 안건 시작 직전)
+     * 각 안건의 status: 개별 표결 결과 반영
+
+   **위원회 일괄상정 안건 처리 (본회의 외):**
+   - 여러 안건이 "일괄 상정" 또는 "일괄해서 상정"된 경우 본문을 분석하여 판단:
+
+   조건 A (통합 처리): 다음 조건을 **모두** 만족하면 통합
+     ✓ 일괄 제안설명 (각 안건별 개별 설명 없음)
+     ✓ 일괄 검토보고 (각 안건별 개별 검토 없음)
+     ✓ 일괄 질의응답 (안건 구분 없이 전체에 대한 질의)
+     ✓ 일괄 표결 (각 안건별 개별 표결 없음)
+     → agenda_title을 쉼표로 연결: "안건1,안건2,안건3,안건4"
+     → line_start/line_end는 전체 논의 구간 하나로 지정
+     → status는 전체 안건의 공통 처리 결과
+
+   조건 B (분리 처리): 다음 조건 중 **하나라도** 해당하면 분리
+     ✓ 각 안건별로 개별 제안설명이 구분되어 있음
+     ✓ 각 안건별로 개별 검토보고가 구분되어 있음
+     ✓ 각 안건에 대한 개별 질의응답이 "---" 구분선으로 나뉘어 있음
+     ✓ 각 안건별로 개별 표결이 진행됨
+     → 각 안건을 별도 agenda로 분리
+     → 각각의 line_start/line_end 개별 지정
+     → 각각의 status 개별 기록
+
+   **판단 예시:**
+   예시 1 (통합): "의사일정 제4항~제8항을 일괄 상정" → 위원장이 5개 안건을 한번에 설명 → 전문위원이 일괄 검토보고 → 질의응답 → "제4항부터 제8항까지 원안대로 의결" (한번에 표결)
+   → agenda_title: "안건4,안건5,안건6,안건7,안건8"
+
+   예시 2 (분리): "의사일정 제24항~제33항을 일괄 상정" → 심사보고는 생략 → 하지만 "제24항을 표결하겠습니다" → "제25항을 표결하겠습니다" → ... (각각 개별 투표)
+   → 10개의 개별 agenda로 분리
 
 **회의록 구조 이해:**
 - 회의록은 "---" 구분선으로 섹션이 나뉘어져 있음
@@ -579,6 +614,9 @@ def parse_section_pure(section_text: str, agenda_title: str, speakers: List[str]
             continue
         # 안건 번호 라인 필터링 (예: "1. 안건명 [](url)" 형태)
         if re.match(r'^\d+\.\s+.+\[\]\(https?://', line):
+            continue
+        # 시간 표기 필터링 (예: (16신 22분), (11시 23분), (14시 16분))
+        if re.match(r'^\([0-9]{1,2}[시신]\s*[0-9]{0,2}\s*분?\)$', line.strip()):
             continue
 
         # ○로 시작하는 발언자 라인인지 확인
@@ -1044,15 +1082,50 @@ def _extract_agenda_mapping_flash_once(
    - agenda_title은 번호를 제외한 순수 안건명만 사용
    - 예: "1. 기획조정실 현안 업무보고" → "기획조정실 현안 업무보고"
 
-2단계: 각 안건의 논의 구간을 개별적으로 지정
-   - "---" 구분선, "○위원장" 발언, 안건명 언급을 참고하여 line_start, line_end 지정
-   - **일괄 상정된 안건도 본문 분석으로 각각 분리** (예: "제1항, 제2항 일괄 상정" → 개별 구간 찾기)
+2단계: 각 안건의 논의 구간 지정 (일괄상정 안건 처리 규칙)
+   - "---" 구분선, "○위원장" 또는 "○의장" 발언, 안건명 언급을 참고하여 line_start, line_end 지정
+
+   **본회의 일괄상정 안건 처리:**
+   - 회의 제목에 "본회의"가 포함되고 여러 안건이 일괄 상정된 경우
+   - 각 안건별로 "의사일정 제X항은 가결되었음" 또는 "의사일정 제X항을 표결하겠습니다" 형태의 개별 표결이 있는지 확인
+   - 개별 표결이 있으면 → **각 안건을 반드시 분리**
+     * 각 안건의 line_start: 해당 안건 표결 시작 라인 (예: "의사일정 제24항 ... 표결하겠습니다")
+     * 각 안건의 line_end: 해당 안건 표결 종료 라인 (예: "가결되었음을 선포합니다" 또는 다음 안건 시작 직전)
+     * 각 안건의 status: 개별 표결 결과 반영
+
+   **위원회 일괄상정 안건 처리 (본회의 외):**
+   - 여러 안건이 "일괄 상정" 또는 "일괄해서 상정"된 경우 본문을 분석하여 판단:
+
+   조건 A (통합 처리): 다음 조건을 **모두** 만족하면 통합
+     ✓ 일괄 제안설명 (각 안건별 개별 설명 없음)
+     ✓ 일괄 검토보고 (각 안건별 개별 검토 없음)
+     ✓ 일괄 질의응답 (안건 구분 없이 전체에 대한 질의)
+     ✓ 일괄 표결 (각 안건별 개별 표결 없음)
+     → agenda_title을 쉼표로 연결: "안건1,안건2,안건3,안건4"
+     → line_start/line_end는 전체 논의 구간 하나로 지정
+     → status는 전체 안건의 공통 처리 결과
+
+   조건 B (분리 처리): 다음 조건 중 **하나라도** 해당하면 분리
+     ✓ 각 안건별로 개별 제안설명이 구분되어 있음
+     ✓ 각 안건별로 개별 검토보고가 구분되어 있음
+     ✓ 각 안건에 대한 개별 질의응답이 "---" 구분선으로 나뉘어 있음
+     ✓ 각 안건별로 개별 표결이 진행됨
+     → 각 안건을 별도 agenda로 분리
+     → 각각의 line_start/line_end 개별 지정
+     → 각각의 status 개별 기록
+
+   **판단 예시:**
+   예시 1 (통합): "의사일정 제4항~제8항을 일괄 상정" → 위원장이 5개 안건을 한번에 설명 → 전문위원이 일괄 검토보고 → 질의응답 → "제4항부터 제8항까지 원안대로 의결" (한번에 표결)
+   → agenda_title: "안건4,안건5,안건6,안건7,안건8"
+
+   예시 2 (분리): "의사일정 제24항~제33항을 일괄 상정" → 심사보고는 생략 → 하지만 "제24항을 표결하겠습니다" → "제25항을 표결하겠습니다" → ... (각각 개별 투표)
+   → 10개의 개별 agenda로 분리
 
 **회의록 구조 이해:**
 - 회의록은 "---" 구분선으로 섹션이 나뉘어져 있음
 - 각 "---" 구분선 사이에 실제 발언("○위원장", "○위원" 등)이 포함된 구간은 하나의 안건으로 추출
 - 첨부 문서(download_url)는 해당 안건 논의 직후에 "(참고)" 형태로 제공되며, 바로 앞 안건의 attachments에 매핑
-- line_start는 실제 발언이 시작되는 첫 라인, line_end는 발언이 끝나는 마지막 라인 ("---" 구분선이나 "(참고)" 섹션 직전)
+- line_start는 실제 발언이 시작되는 첫 라인 (예: ○위원장 김혜영  의사일정 제1항...), line_end는 발언이 끝나는 마지막 라인 ("---" 구분선이나 "(참고)" 섹션 직전)
 
 **안건 외 섹션:**
 - 안건 목록에 없어도 실제 회의 내용(개의, 질의응답, 5분자유발언, 산회 등)은 모두 포함
@@ -1306,15 +1379,72 @@ def extract_metadata_hybrid_flash(
         print(f"📏 크기: {len(txt_content):,} bytes")
         print()
 
-    # 1단계: 안건 매핑 추출 (Gemini Flash - 개선된 프롬프트)
+    # 1단계: 안건 매핑 추출 (Gemini Flash - 개선된 프롬프트) with 재시도
     import sys
     from io import StringIO
     old_stdout = sys.stdout
-    if not verbose:
-        sys.stdout = StringIO()
 
-    # txt에서 attachments는 추출할 수 없으므로 빈 리스트 전달
-    stage1_result, tokens = extract_agenda_mapping_flash(txt_content, title, url, api_key, [])
+    max_retries = 3
+    stage1_result = None
+    tokens = {"input": 0, "output": 0}
+
+    for attempt in range(max_retries + 1):
+        if not verbose:
+            sys.stdout = StringIO()
+
+        # txt에서 attachments는 추출할 수 없으므로 빈 리스트 전달
+        stage1_result, tokens = extract_agenda_mapping_flash(txt_content, title, url, api_key, [])
+
+        if not verbose:
+            sys.stdout = old_stdout
+
+        # 중복 line range 검증
+        has_overlap = False
+        overlap_details = []
+        agendas = stage1_result.get('agenda_mapping', [])
+
+        for i in range(len(agendas)):
+            for j in range(i + 1, len(agendas)):
+                agenda1 = agendas[i]
+                agenda2 = agendas[j]
+
+                start1 = agenda1.get('line_start', 0)
+                end1 = agenda1.get('line_end', 0)
+                start2 = agenda2.get('line_start', 0)
+                end2 = agenda2.get('line_end', 0)
+
+                # 겹침 계산 (5줄 이상 겹치면 문제)
+                overlap_start = max(start1, start2)
+                overlap_end = min(end1, end2)
+                overlap = max(0, overlap_end - overlap_start)
+
+                if overlap > 5:
+                    has_overlap = True
+                    overlap_details.append({
+                        'agenda1_title': agenda1.get('agenda_title', '(제목없음)')[:40],
+                        'range1': f"{start1}-{end1}",
+                        'agenda2_title': agenda2.get('agenda_title', '(제목없음)')[:40],
+                        'range2': f"{start2}-{end2}",
+                        'overlap': overlap
+                    })
+
+        if not has_overlap:
+            if verbose and attempt > 0:
+                print(f"✅ 재시도 성공 (시도 {attempt + 1}): 중복 line range 해결됨")
+            break
+        else:
+            if attempt < max_retries:
+                if verbose:
+                    print(f"⚠️  시도 {attempt + 1}: 중복 line range 발견 ({len(overlap_details)}개)")
+                    for detail in overlap_details[:3]:
+                        print(f"   - {detail['agenda1_title']} ({detail['range1']}) ↔ {detail['agenda2_title']} ({detail['range2']}) | 겹침: {detail['overlap']}줄")
+                    print(f"🔄 Stage 1 재시도 중...")
+                logger.warning(f"중복 line range 발견, 재시도 {attempt + 1}/{max_retries}")
+            else:
+                if verbose:
+                    print(f"❌ 최대 재시도 횟수 초과: 중복 line range가 여전히 존재함 ({len(overlap_details)}개)")
+                    print(f"   계속 진행하지만 결과에 문제가 있을 수 있습니다.")
+                logger.error(f"중복 line range 해결 실패 (최대 재시도 초과)")
 
     if not verbose:
         sys.stdout = old_stdout
