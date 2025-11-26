@@ -46,11 +46,14 @@ class MeetingSearcher:
 
         self.collection = self.client.get_collection(
             name=collection_name,
-            embedding_function=openai_ef  # 동일한 Embedding 함수 사용
+            embedding_function=openai_ef  # 쿼리 시 사용할 임베딩 함수를 명시적으로 지정
         )
-        print(f"✓ 컬렉션 로드: {collection_name}")
-        print(f"✓ Embedding 모델: text-embedding-3-small")
-        print(f"✓ 총 문서 수: {self.collection.count()}개\n")
+        
+        # 컬렉션에 할당된 임베딩 함수를 사용하여 검색 (중요)
+        print(f"컬렉션 로드: {collection_name}")
+        # 임베딩 모델 이름은 컬렉션 메타데이터에서 직접 가져오기 어렵지만,
+        # 일관된 함수를 사용한다는 점이 중요합니다.
+        print(f"총 문서 수: {self.collection.count()}개\n")
 
     def search(
         self,
@@ -247,18 +250,18 @@ class MeetingSearcher:
         Args:
             results: 검색 결과
         """
-        print(f"🔍 검색어: \"{results['query']}\"")
-        print(f"📊 결과: {results['total_results']}건\n")
+        print(f"검색어: \"{results['query']}\"")
+        print(f"결과: {results['total_results']}건\n")
         print("="*80)
 
         for result in results["results"]:
             print(f"\n[{result['rank']}] 유사도: {result['similarity']:.3f}")
-            print(f"📅 회의: {result['meeting_title']}")
-            print(f"🗣️  발언자: {result['speaker']}")
-            print(f"📋 안건: {result['agenda']}")
-            print(f"💬 내용:")
+            print(f"회의: {result['meeting_title']}")
+            print(f"발언자: {result['speaker']}")
+            print(f"안건: {result['agenda']}")
+            print(f"내용:")
             print(f"   {result['text'][:200]}...")
-            print(f"🔗 URL: {result['meeting_url']}")
+            print(f"URL: {result['meeting_url']}")
             print("-"*80)
 
 
@@ -312,11 +315,11 @@ def demo_search():
     print("="*80)
     print("메타데이터 조회")
     print("="*80)
-    print(f"\n📝 발언자 목록:")
+    print(f"\n발언자 목록:")
     for speaker in searcher.get_all_speakers():
         print(f"  - {speaker}")
 
-    print(f"\n📅 회의 날짜:")
+    print(f"\n회의 날짜:")
     for date in searcher.get_all_dates():
         print(f"  - {date}")
         meeting_info = searcher.get_meeting_info(date)

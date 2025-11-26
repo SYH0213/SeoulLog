@@ -47,7 +47,7 @@ class Retriever:
             documents.append({
                 "text": result.get("text", ""),
                 "similarity": result.get("similarity", 0.0),
-                "source": result.get("agenda_id", "N/A")
+                "source": result.get("agenda", "N/A")  # BUGFIX: agenda_id -> agenda
             })
         
         print(f"   -> {len(documents)}개 문서 검색 완료")
